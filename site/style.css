@@ -1,0 +1,381 @@
+/* Channel Menu
+   The screen is always 16:9 or 4:3, with black bars around it like a TV.
+   Upright phones are the exception: the page fills the display and the channels scroll.
+   Sizes inside the screen use cqh and cqw (1% of the screen's height or width). */
+
+
+/* ---------- Colors and fonts ---------- */
+/* js/tv.js reads these too, so change them here. */
+
+:root {
+  --bars: #000;
+  --bg: #ecedef;
+  --side-shade: rgba(0, 0, 0, .07);
+  --stripe-w: 736px;
+  --stripe-h: 24px;
+
+  --pink: #ef6fab;
+  --pink-glow: rgba(239, 111, 171, .5);
+  --ink: #8c8f96;
+  --ink-soft: #b5b7bc;
+
+  --tile-fill: #7d7f84;
+  --tile-edge: #c9cbd0;
+
+  --dock-top: #e9eaec;
+  --dock-bottom: #d4d5d9;
+  --dock-shadow: rgba(0, 0, 0, .09);
+
+  --orb-light: #fff;
+  --orb-shade: #e6e7ea;
+  --orb-ring: #f3f3f5;
+  --orb-ring-edge: #cfd0d4;
+  --envelope: #9a9da3;
+  --envelope-flap: #eceef0;
+
+  /* Rodin NTLG is used if it is installed. Otherwise M PLUS 1p from Google Fonts. */
+  --font-ui: "Rodin NTLG Pro DB", "FOT-Rodin NTLG Pro DB", "FOT-RodinNTLGPro-DB", "Rodin NTLG", "M PLUS 1p", system-ui, sans-serif;
+}
+
+
+/* ---------- Page and screen ---------- */
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--bars);
+  color: var(--ink);
+  font-family: var(--font-ui);
+}
+
+.screen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  container-type: size;
+  aspect-ratio: 16 / 9;
+  width: min(100vw, calc(100dvh * 16 / 9));
+  border-radius: 3cqh;
+  background:
+    linear-gradient(90deg, var(--side-shade), transparent 32% 68%, var(--side-shade)),
+    url("images/stripes.png") 0 0 / var(--stripe-w) var(--stripe-h) repeat,
+    var(--bg);
+}
+
+/* Squarer windows get 4:3. The switch sits halfway between the two shapes. */
+@media (max-aspect-ratio: 14 / 9) {
+  .screen {
+    aspect-ratio: 4 / 3;
+    width: min(100vw, calc(100dvh * 4 / 3));
+  }
+}
+
+
+/* ---------- Channels ---------- */
+
+.wall {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3cqh 6cqw 2cqh;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2cqh;
+  /* Limited by height so three rows always fit above the dock. */
+  width: min(100%, 140cqh);
+}
+
+.tile {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 2px solid var(--tile-edge);
+  border-radius: 2.6cqh;
+  background: var(--tile-fill);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+.tile:hover {
+  z-index: 1;
+  transform: scale(1.04);
+  border-color: var(--pink);
+  box-shadow: 0 0 0 3px var(--pink), 0 0 18px var(--pink-glow);
+}
+
+/* The channel picture (static, an image or a video). */
+.tile canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Glass on each channel: a light band rolling down, scanlines and darker corners. */
+.tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(transparent 0 40%, rgba(255, 255, 255, .12) 48%, transparent 56%) 0 0 / 100% 300%,
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, .16) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, .28));
+  animation: roll 3.2s linear infinite;
+}
+
+@keyframes roll {
+  from { background-position: 0 100%, 0 0, 0 0; }
+  to { background-position: 0 -200%, 0 0, 0 0; }
+}
+
+
+/* ---------- Dock ---------- */
+
+.dock {
+  position: relative;
+  flex: none;
+  height: 27cqh;
+}
+
+.dock-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.dock-top { stop-color: var(--dock-top); }
+.dock-bottom { stop-color: var(--dock-bottom); }
+
+.dock-shadow {
+  fill: none;
+  stroke: var(--dock-shadow);
+  stroke-width: 26;
+}
+
+.dock-edge {
+  fill: none;
+  stroke: var(--pink);
+  stroke-width: 3;
+}
+
+/* Clock: seven-segment digits drawn by js/clock.js. */
+.clock {
+  position: absolute;
+  top: 9%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: flex-end;
+  gap: .16em;
+  font-size: 8cqh;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--ink-soft);
+}
+
+.seg {
+  display: block;
+  flex: none;
+  width: .5em;
+  height: 1em;
+  fill: currentColor;
+}
+
+.seg.colon {
+  width: .12em;
+  animation: blink 1s steps(1) infinite;
+}
+
+@keyframes blink {
+  50% { opacity: .15; }
+}
+
+/* AM or PM */
+.clock small {
+  flex: none;
+  margin-left: .3em;
+  padding-bottom: .05em;
+  font-size: .34em;
+  font-weight: 700;
+  letter-spacing: .06em;
+}
+
+.date {
+  position: absolute;
+  bottom: 14%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 4.8cqh;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+/* Round buttons. The button is the light ring, the face sits inside it. */
+.orb {
+  position: absolute;
+  bottom: calc(14% - 1.8cqh);
+  padding: 1.8cqh;
+  border: 0;
+  border-radius: 50%;
+  background: var(--orb-ring);
+  box-shadow: 0 0 0 2px var(--orb-ring-edge), 0 4px 10px rgba(0, 0, 0, .15);
+  transition: transform .15s ease;
+}
+
+.orb:hover,
+.orb:focus-visible {
+  outline: none;
+  transform: scale(1.06);
+}
+
+.orb.left { left: calc(5cqw - 1.8cqh); }
+.orb.right { right: calc(5cqw - 1.8cqh); }
+
+.orb-face {
+  display: grid;
+  place-items: center;
+  width: 15cqh;
+  aspect-ratio: 1;
+  border: 3px solid var(--pink);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, var(--orb-light), var(--orb-shade) 70%);
+}
+
+.envelope {
+  position: relative;
+  overflow: hidden;
+  width: 44%;
+  height: 30%;
+  border-radius: 3px;
+  background: var(--envelope);
+}
+
+/* The flap: a square turned 45 degrees, mostly hidden above the envelope. */
+.envelope::before {
+  content: "";
+  position: absolute;
+  top: -60%;
+  left: 50%;
+  width: 72%;
+  aspect-ratio: 1;
+  transform: translateX(-50%) rotate(45deg);
+  border: 2px solid var(--envelope-flap);
+}
+
+
+/* ---------- CRT glass for the flat page ---------- */
+/* Used on phones, and on computers without WebGL. The TV view draws its own glass. */
+
+.screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, .06), transparent 38%),
+    radial-gradient(ellipse 75% 70% at 50% 50%, transparent 66%, rgba(0, 0, 0, .2) 100%),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, .04) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(255, 0, 0, .02) 0 1px, rgba(0, 255, 0, .02) 1px 2px, rgba(0, 0, 255, .02) 2px 3px);
+  box-shadow: inset 0 0 5cqh rgba(0, 0, 0, .2), inset 0 0 1cqh rgba(0, 0, 0, .25);
+  animation: flicker 4s steps(1) infinite;
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  47% { opacity: .97; }
+  48% { opacity: 1; }
+  81% { opacity: .98; }
+  82% { opacity: 1; }
+}
+
+
+/* ---------- TV view ---------- */
+/* js/tv.js paints the screen onto this canvas and bends it.
+   The page underneath stays in place but hidden, so its layout can still be measured. */
+
+.crt {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: none;
+  width: 100%;
+  height: 100%;
+}
+
+.screen.tv .crt { display: block; }
+.screen.tv > main,
+.screen.tv > footer { visibility: hidden; }
+.screen.tv::after { display: none; }
+
+
+/* ---------- Cursor ---------- */
+/* A pointing hand, and a fist while the mouse button is down. In the TV view the canvas draws it instead. */
+
+html, html * { cursor: url("images/cursor-point.svg") 12 3, pointer !important; }
+html.pressing, html.pressing * { cursor: url("images/cursor-fist.svg") 12 15, grabbing !important; }
+.screen.tv, .screen.tv * { cursor: none !important; }
+
+
+/* ---------- Phones ---------- */
+
+@media (max-width: 600px) and (orientation: portrait) {
+  .screen {
+    aspect-ratio: auto;
+    width: 100vw;
+    height: 100dvh;
+    border-radius: 0;
+  }
+
+  .screen::after { box-shadow: inset 0 0 32px rgba(0, 0, 0, .18); }
+
+  .wall {
+    align-items: flex-start;
+    padding: 16px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    width: 100%;
+  }
+
+  .tile { border-radius: 12px; }
+  .tile:hover { transform: none; }
+
+  .dock { height: 168px; }
+  .clock { top: 2%; font-size: 32px; }
+  .date { font-size: 20px; }
+
+  .orb { padding: 8px; bottom: calc(14% - 8px); }
+  .orb.left { left: 16px; }
+  .orb.right { right: 16px; }
+  .orb-face { width: 64px; }
+}
+
+
+/* ---------- Less motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .tile, .orb { transition: none; }
+  .tile::after, .seg.colon, .screen::after { animation: none; }
+}

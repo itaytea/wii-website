@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Channel Menu</title>
+  <meta name="description" content="A channel menu that looks like an old TV.">
+  <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@500;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <!-- Scripts run in this order. Later files use names from earlier ones. -->
+  <script src="js/settings.js" defer></script>
+  <script src="js/clock.js" defer></script>
+  <script src="js/channels.js" defer></script>
+  <script src="js/crt-shader.js" defer></script>
+  <script src="js/tv.js" defer></script>
+  <script src="js/main.js" defer></script>
+</head>
+<body>
+  <div class="screen">
+
+    <!-- Channels. The tiles are added by js/channels.js from the list in js/settings.js. -->
+    <main class="wall">
+      <div class="grid" id="channels"></div>
+    </main>
+
+    <!-- Dock: the curved bar at the bottom with the clock, date and two buttons. -->
+    <footer class="dock">
+      <svg class="dock-bg" viewBox="0 0 1000 200" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="dock-gradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" class="dock-top"/>
+            <stop offset="1" class="dock-bottom"/>
+          </linearGradient>
+          <!-- The top edge of the dock. Used for the shadow and the pink line. -->
+          <path id="dock-line" d="M0 20 H250 C330 20 350 100 430 100 H570 C650 100 670 20 750 20 H1000" vector-effect="non-scaling-stroke"/>
+          <clipPath id="dock-clip"><use href="#dock-shape"/></clipPath>
+          <filter id="dock-blur" x="-5%" y="-50%" width="110%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>
+        </defs>
+        <path id="dock-shape" d="M0 20 H250 C330 20 350 100 430 100 H570 C650 100 670 20 750 20 H1000 V200 H0 Z" fill="url(#dock-gradient)"/>
+        <g clip-path="url(#dock-clip)">
+          <use href="#dock-line" class="dock-shadow" transform="translate(0 14)" filter="url(#dock-blur)"/>
+        </g>
+        <use href="#dock-line" class="dock-edge"/>
+      </svg>
+
+      <div class="clock" id="clock" role="img" aria-label="Time"></div>
+      <div class="date" id="date"></div>
+
+      <button class="orb left" type="button" aria-label="Menu">
+        <span class="orb-face"></span>
+      </button>
+      <button class="orb right" type="button" aria-label="Messages">
+        <span class="orb-face"><span class="envelope"></span></span>
+      </button>
+    </footer>
+
+  </div>
+</body>
+</html>
